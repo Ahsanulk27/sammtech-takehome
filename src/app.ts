@@ -1,8 +1,8 @@
 import express from "express";
 import type { Request, Response } from "express";
-import authRouter from "./routes/authRoute.ts";
+import authRouter from "./routes/authRoute.js";
 import dotenv from "dotenv";
-import taskRouter from "./routes/taskRoutes.ts";
+import taskRouter from "./routes/taskRoutes.js";
 dotenv.config();
 
 const app = express();

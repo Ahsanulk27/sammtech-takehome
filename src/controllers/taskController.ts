@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client.ts";
+import { PrismaClient } from "../generated/prisma/client.js";
 import type { Response } from "express";
 import type { AuthRequest } from "../middleware/authMiddleware.ts";
 import dotenv from "dotenv";
@@ -8,7 +8,7 @@ import type {
   CreateTaskInput,
   UpdateTaskInput,
 } from "../middleware/taskValidation.ts";
-import { Status } from "../generated/prisma/client.ts";
+import { Status } from "../generated/prisma/client.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 
