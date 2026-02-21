@@ -1,0 +1,81 @@
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client.ts";
+import type { Response } from "express";
+import type { AuthRequest } from "../middleware/authMiddleware.ts";
+import dotenv from "dotenv";
+dotenv.config();
+import bcrypt from "bcrypt";
+import type {
+  CreateTaskInput,
+  UpdateTaskInput,
+} from "../middleware/taskValidation.ts";
+import jwt from "jsonwebtoken";
+import { string } from "zod";
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+
+const prisma = new PrismaClient({ adapter });
+
+export const getAllTasks = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+    return res.status(200).json({ tasks });
+  } catch (error) {
+    return res.status(500).json({ message: "Could not fetch tasks", error });
+  }
+};
+
+export const getTaskById = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const taskId = req.params.id as string;
+    const task = await prisma.task.findFirst({
+      where: {
+        userId: userId,
+        id: taskId,
+      },
+    });
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    return res.status(200).json({ message: "Task fetched successfully", task });
+  } catch (error) {
+    return res.status(500).json({ message: "Could not fetch task", error });
+  }
+};
+
+export const createTask = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const { title, description, status, dueDate } = req.body as CreateTaskInput;
+
+    const task = await prisma.task.create({
+        data: {
+            userId: userId,
+            title,
+            description: description ?? null,
+            status,
+            dueDate: new Date(dueDate),
+        }
+    })
+    return res.status(201).json({message: "Task created successfully", task});
+  } catch (error) {
+    return res.status(500).json({ message: "Could not create task", error });
+  }
+};
+
