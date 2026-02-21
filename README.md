@@ -28,7 +28,7 @@ A RESTful API for managing tasks with user authentication, built with Node.js, E
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Ahsanulk27/sammtech-takehome.git
 cd sammtech-task-api
 ```
 
@@ -44,6 +44,7 @@ Create a `.env` file in the root of the project:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/sammtech"
+/// If you want to use my hosted db with pre-filled data -> postgresql://neondb_owner:npg_Y7HSWpLkva0E@ep-fancy-field-a1yrnms0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require
 JWT_SECRET="your-super-secret-key"
 PORT=3000
 ```
@@ -82,8 +83,8 @@ The server will be running at `http://localhost:3000`.
 
 | Method | Endpoint              | Description         | Auth Required |
 |--------|-----------------------|---------------------|---------------|
-| POST   | `/api/auth/register`  | Register a new user | No            |
-| POST   | `/api/auth/login`     | Login and get token | No            |
+| POST   | `/api/auth/sign-up`  | Register a new user | No            |
+| POST   | `/api/auth/sign-in`     | Login and get token | No            |
 
 ### Tasks
 
@@ -115,7 +116,7 @@ All protected routes require a Bearer token in the `Authorization` header:
 Authorization: Bearer <your_jwt_token>
 ```
 
-You can obtain a token by logging in via `POST /api/auth/login`.
+You can obtain a token by logging in via `POST /api/auth/sign-in`.
 
 ---
 
@@ -198,9 +199,9 @@ src/
 │   └── validator.ts
 ├── prisma/
 │   └── client.ts
+├── generated/        ← gitignored, Prisma generated client
+├── prisma.config.ts
 └── app.ts
-prisma/
-└── schema.prisma
 ```
 
 ---
