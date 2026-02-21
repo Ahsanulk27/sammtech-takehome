@@ -11,6 +11,7 @@ import type {
 } from "../middleware/taskValidation.ts";
 import jwt from "jsonwebtoken";
 import { string } from "zod";
+import { userInfo } from "node:os";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 
@@ -65,17 +66,83 @@ export const createTask = async (req: AuthRequest, res: Response) => {
     const { title, description, status, dueDate } = req.body as CreateTaskInput;
 
     const task = await prisma.task.create({
-        data: {
-            userId: userId,
-            title,
-            description: description ?? null,
-            status,
-            dueDate: new Date(dueDate),
-        }
-    })
-    return res.status(201).json({message: "Task created successfully", task});
+      data: {
+        userId: userId,
+        title,
+        description: description ?? null,
+        status,
+        dueDate: new Date(dueDate),
+      },
+    });
+    return res.status(201).json({ message: "Task created successfully", task });
   } catch (error) {
     return res.status(500).json({ message: "Could not create task", error });
   }
 };
 
+export const updateTask = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const taskId = req.params.id as string;
+    const { title, description, status, dueDate } = req.body as UpdateTaskInput;
+
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        userId: userId,
+        id: taskId,
+      },
+    });
+    if (!existingTask) {
+      return res.status(404).json({ message: "task not found" });
+    }
+    const updatedTask = await prisma.task.update({
+      where: {
+        id: taskId,
+        userId: userId,
+      },
+      data: {
+        title: title ?? existingTask.title,
+        description: description ?? existingTask.description,
+        status: status ?? existingTask.status,
+        dueDate: dueDate ? new Date(dueDate) : existingTask.dueDate,
+      },
+    });
+    return res
+      .status(200)
+      .json({ message: "Task updated successfully", task: updatedTask });
+  } catch (error) {
+    return res.status(500).json({ message: "Could not update task", error });
+  }
+};
+
+export const deleteTask = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const taskId = req.params.id as string;
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        userId: userId,
+        id: taskId,
+      },
+    });
+    if (!existingTask) {
+      return res.status(404).json({ message: "task not found" });
+    }
+
+    const deletedTask = await prisma.task.delete({
+      where: {
+        id: taskId,
+        userId: userId,
+      },
+    });
+    return res.status(200).json({ message: "Task deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to delete task", error });
+  }
+};
