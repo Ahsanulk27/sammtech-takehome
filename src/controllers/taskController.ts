@@ -4,14 +4,11 @@ import type { Response } from "express";
 import type { AuthRequest } from "../middleware/authMiddleware.ts";
 import dotenv from "dotenv";
 dotenv.config();
-import bcrypt from "bcrypt";
 import type {
   CreateTaskInput,
   UpdateTaskInput,
 } from "../middleware/taskValidation.ts";
-import jwt from "jsonwebtoken";
-import { string } from "zod";
-import { userInfo } from "node:os";
+import { Status } from "../generated/prisma/client.ts";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 
@@ -23,12 +20,33 @@ export const getAllTasks = async (req: AuthRequest, res: Response) => {
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const tasks = await prisma.task.findMany({
-      where: {
-        userId: userId,
-      },
-    });
-    return res.status(200).json({ tasks });
+    const { status } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    const whereClause = {
+      userId: userId,
+      ...(status ? { status: status as Status } : {}),
+    };
+    const [tasks, total] = await Promise.all([
+      prisma.task.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+      }),
+      prisma.task.count({ where: whereClause }),
+    ]);
+    return res
+      .status(200)
+      .json({
+        tasks,
+        // pagination: {
+        //   total,
+        //   page,
+        //   limit,
+        //   totalPages: Math.ceil(total / limit),
+        // },
+      });
   } catch (error) {
     return res.status(500).json({ message: "Could not fetch tasks", error });
   }
